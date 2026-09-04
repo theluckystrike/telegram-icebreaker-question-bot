@@ -1,8 +1,9 @@
 /** Pure helpers for IcebreakerBot: schedule/tz parsing, due-time selection, pack rotation,
  * reply-counter rendering, theme gating, and small format/deep-link helpers. No I/O, no
  * Date.now() reads. */
-import { THEMES } from "./questions.ts";
+import { GENERAL, PACKS, THEMES, THEME_LABEL } from "./questions.ts";
 import type { Theme } from "./questions.ts";
+import type { GuestReply } from "./guest.ts";
 
 const DAY_SEC = 86_400;
 
@@ -165,4 +166,19 @@ export function dateLabel(day: number): string { return new Date(day * 86_400_00
  * question at will, resetting the reply counter and burning through the free pack (S9 #5). */
 export function canManualPost(pro: boolean, alreadyPostedToday: boolean): boolean {
   return pro || !alreadyPostedToday;
+}
+
+/** Pure Guest Mode reply builder: posts one question, themed if the query names a Pro theme
+ * (fun/deep/work/travel/food), else the free general pack. Never touches the store: the reply
+ * counter (renderPost's escalation) needs a real posted message to track, which a guest
+ * summon never has. */
+export function buildGuestReply(q: string, pitch: GuestReply): GuestReply {
+  const query = q.trim().toLowerCase();
+  const theme = isTheme(query) ? query : null;
+  const pool = theme ? PACKS[theme] : GENERAL;
+  if (pool.length === 0) return pitch;
+  const { idx } = rollIndex(new Set(), pool.length);
+  const label = theme ? THEME_LABEL[theme] : "General";
+  const text = `💬 Question of the day: ${pool[idx]}`;
+  return { title: `💬 ${label} icebreaker`, description: pool[idx].slice(0, 90), text };
 }

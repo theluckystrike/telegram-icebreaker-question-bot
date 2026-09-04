@@ -3,8 +3,9 @@ import { Env as KitEnv, PRO_STARS, ProSpec, displayName, isPrivate, makeFetch, n
 import { Store } from "./db.ts";
 import { GENERAL, PACKS, THEME_LABEL } from "./questions.ts";
 import type { Theme } from "./questions.ts";
+import { GuestReply, queryText, wireGuest, wireInline } from "./guest.ts";
 import {
-  DIGEST_HOUR, canManualPost, dayIndex, decodeChatId, effectiveHour, encodeChatId, formatHour, formatTz,
+  DIGEST_HOUR, buildGuestReply, canManualPost, dayIndex, decodeChatId, effectiveHour, encodeChatId, formatHour, formatTz,
   isAdminStatus, isDigestDue, isDueNow, isRealSender, isSourcePayload, isTheme, isThemeAllowed, packKey,
   parseIcebreakerArgs, parseTz, renderPost, rollIndex, shouldEditCounter,
 } from "./logic.ts";
@@ -161,6 +162,20 @@ async function onGroupText(ctx: Context & { message: NonNullable<Context["messag
   }
 }
 
+/** Static copy for a guest chat, with the Markdown the i18n table carries stripped: guest
+ * results are posted as plain text (the query is user-supplied and may contain _ or *). */
+const plain = (s: string): string => s.replaceAll("*", "").replaceAll("`", "");
+
+/** Guest Mode: someone @-mentioned us in a chat we were never added to. The pack pick
+ * (parses -> value card) lives in the pure, unit-tested `buildGuestReply` in logic.ts;
+ * this just gathers the query text and the caller's language. */
+async function onGuest(ctx: Context, env: Env): Promise<GuestReply> {
+  const lang = resolveLang(ctx.from?.language_code);
+  const q = queryText(ctx, BOT);
+  const pitch: GuestReply = { title: "💬 Icebreaker — a daily question for your group", description: "Try: @" + BOT + " deep", text: plain(startText(lang)) };
+  return buildGuestReply(q, pitch);
+}
+
 function buildBot(env: Env): Bot {
   const bot = new Bot(env.BOT_TOKEN);
   // Registered first, on the RAW bot, before the `m` composer below even exists — a channel
@@ -198,6 +213,29 @@ function buildBot(env: Env): Bot {
     if (ctx.message.new_chat_members.some((mem) => mem.id === me)) await ctx.reply(startText(resolveLang(ctx.from?.language_code)), { parse_mode: "Markdown" });
   });
   bot.on("message:text", (ctx) => onGroupText(ctx, env));
+  wireGuest(bot, {
+    botUsername: BOT,
+    reply: (ctx) => onGuest(ctx, env),
+    // `guest` is NOT written to `sources` here (REVIEW-GUEST F3): a summoner is not an
+    // installer. src_guest is earned later, through the ?start=guest deep link in the
+    // buttons below. recordGuest self-limits; `flood` downgrades us to the cheap pitch.
+    record: async (uid, chatType, chatId) => {
+      const r = await store(env).recordGuest(uid, chatType, chatId);
+      if (r.recorded) await store(env).track(uid, "guest");
+      return !r.flood;
+    },
+  });
+  // Classic inline mode: the SAME reply builder, answered as an inline result. A user types
+  // "@Bot query" in any chat on any client and posts the card with `via @Bot` attribution —
+  // no admin, no membership, no Guest Chat Mode toggle. The destination chat is unknown, so
+  // the card carries private-style buttons only. Counted under `inline_queries`; `sources` is
+  // never written here (an inline user is not an installer, same rule as the guest path).
+  wireInline(bot, {
+    botUsername: BOT,
+    reply: (ctx) => onGuest(ctx, env),
+    record: async (uid) => !(await store(env).recordInline(uid)).flood,
+    chosen: (uid) => store(env).recordInlineChosen(uid),
+  });
   return bot;
 }
 

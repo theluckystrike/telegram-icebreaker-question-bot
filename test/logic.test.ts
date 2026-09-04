@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { GENERAL, PACKS, THEMES } from "../src/questions.ts";
 import {
-  DIGEST_HOUR, FREE_HOUR, canManualPost, decodeChatId, effectiveHour, encodeChatId, formatHour, formatTz,
+  DIGEST_HOUR, FREE_HOUR, buildGuestReply, canManualPost, decodeChatId, effectiveHour, encodeChatId, formatHour, formatTz,
   isAdminStatus, isDigestDue, isDueNow, isRealSender, isSourcePayload, isTheme, isThemeAllowed, packKey,
   parseIcebreakerArgs, parseTz, renderPost, rollIndex, shouldEditCounter,
 } from "../src/logic.ts";
@@ -167,4 +167,24 @@ test("canManualPost: free groups get one manual /question a day, Pro is unlimite
   assert.equal(canManualPost(false, true), false); // free, already posted today -> blocked
   assert.equal(canManualPost(true, false), true); // Pro, no post yet
   assert.equal(canManualPost(true, true), true); // Pro, already posted -> still allowed
+});
+
+test("buildGuestReply: a named theme returns a value card from that pack", () => {
+  const pitch = { title: "pitch", description: "d", text: "p" };
+  const r = buildGuestReply("deep", pitch);
+  assert.notEqual(r, pitch);
+  assert.match(r.title, /Deep/i);
+  assert.match(r.text, /^💬 Question of the day: /);
+  assert.ok(PACKS.deep.some((q) => r.text.includes(q)));
+  assert.ok(!("parse_mode" in r));
+  assert.equal("buttons" in r, false, "buttons are appended by wireGuest, not the pure builder");
+});
+test("buildGuestReply: an unrecognized/empty theme still returns a value card from the general pack", () => {
+  const pitch = { title: "pitch", description: "d", text: "p" };
+  const r1 = buildGuestReply("not a theme", pitch);
+  const r2 = buildGuestReply("", pitch);
+  assert.notEqual(r1, pitch);
+  assert.notEqual(r2, pitch);
+  assert.match(r1.title, /General/i);
+  assert.ok(GENERAL.some((q) => r1.text.includes(q)));
 });
