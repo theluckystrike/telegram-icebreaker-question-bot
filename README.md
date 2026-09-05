@@ -1,6 +1,6 @@
 # IcebreakerDailyBot — icebreaker question bot for Telegram
 
-**Try it:** [@IcebreakerDailyBot](https://t.me/IcebreakerDailyBot) · [tg.zovo.one/bots/icebreaker/](https://tg.zovo.one/bots/icebreaker/)
+**Try it:** [@IcebreakerDailyBot](https://t.me/IcebreakerDailyBot?start=github) · [tg.zovo.one/bots/icebreaker/](https://tg.zovo.one/bots/icebreaker/)
 
 ## What it does
 
