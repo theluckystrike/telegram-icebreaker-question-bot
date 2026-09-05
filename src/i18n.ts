@@ -25,7 +25,26 @@ export type Key =
   | "questionLimitReached"
   | "btn_unlockPro"
   | "btn_addToGroup"
-  | "btn_shareBot";
+  | "btn_shareBot"
+  | "app_title"
+  | "app_loading"
+  | "app_moreApps"
+  | "app_today"
+  | "app_empty"
+  | "app_group"
+  | "app_shareChat"
+  | "app_shareStory"
+  | "app_storyText"
+  | "app_shareFail"
+  | "app_errNoInit"
+  | "app_errExpired"
+  | "app_errBadSig"
+  | "app_unlockPro"
+  | "app_proOneTime"
+  | "app_proMonthly"
+  | "app_payDone"
+  | "app_payCancelled"
+  | "app_payFailed";
 
 /** ctx.from.language_code -> first two letters -> known table language, else "en". */
 export function resolveLang(code?: string): Lang {
@@ -315,4 +334,142 @@ const TABLE: Record<Key, Record<Lang, string>> = {
     ar: "📣 شارك هذا البوت",
     hi: "📣 यह बॉट शेयर करें",
   },
+  app_title: {
+    en: "💬 Icebreaker", ru: "💬 Icebreaker", es: "💬 Icebreaker", pt: "💬 Icebreaker", id: "💬 Icebreaker",
+    de: "💬 Icebreaker", tr: "💬 Icebreaker", uk: "💬 Icebreaker", fa: "💬 Icebreaker", ar: "💬 Icebreaker", hi: "💬 Icebreaker",
+  },
+  app_loading: {
+    en: "Loading…", ru: "Загрузка…", es: "Cargando…", pt: "Carregando…", id: "Memuat…",
+    de: "Wird geladen…", tr: "Yükleniyor…", uk: "Завантаження…", fa: "در حال بارگذاری…", ar: "جارٍ التحميل…", hi: "लोड हो रहा है…",
+  },
+  app_moreApps: {
+    en: "More apps", ru: "Другие приложения", es: "Más apps", pt: "Mais apps", id: "Aplikasi lain",
+    de: "Mehr Apps", tr: "Diğer uygulamalar", uk: "Інші застосунки", fa: "برنامه‌های بیشتر", ar: "تطبيقات أخرى", hi: "और ऐप्स",
+  },
+  app_today: {
+    en: "Today", ru: "Сегодня", es: "Hoy", pt: "Hoje", id: "Hari ini",
+    de: "Heute", tr: "Bugün", uk: "Сьогодні", fa: "امروز", ar: "اليوم", hi: "आज",
+  },
+  app_empty: {
+    en: "No question posted today yet.",
+    ru: "Сегодня вопрос ещё не опубликован.",
+    es: "Todavía no se ha publicado una pregunta hoy.",
+    pt: "Ainda não foi publicada nenhuma pergunta hoje.",
+    id: "Belum ada pertanyaan yang diposting hari ini.",
+    de: "Heute wurde noch keine Frage gepostet.",
+    tr: "Bugün henüz soru paylaşılmadı.",
+    uk: "Сьогодні питання ще не опубліковано.",
+    fa: "امروز هنوز سؤالی ارسال نشده است.",
+    ar: "لم يُنشر أي سؤال اليوم بعد.",
+    hi: "आज अभी तक कोई सवाल पोस्ट नहीं हुआ।",
+  },
+  app_group: {
+    en: "Group", ru: "Группа", es: "Grupo", pt: "Grupo", id: "Grup",
+    de: "Gruppe", tr: "Grup", uk: "Група", fa: "گروه", ar: "مجموعة", hi: "ग्रुप",
+  },
+  app_shareChat: {
+    en: "💬 Share to a chat", ru: "💬 Отправить в чат", es: "💬 Compartir en chat", pt: "💬 Enviar no chat", id: "💬 Bagikan ke chat",
+    de: "💬 In Chat teilen", tr: "💬 Sohbette paylaş", uk: "💬 Надіслати в чат", fa: "💬 ارسال به گفتگو", ar: "💬 مشاركة في محادثة", hi: "💬 चैट में भेजें",
+  },
+  app_shareStory: {
+    en: "📣 Share to story", ru: "📣 В историю", es: "📣 A tu historia", pt: "📣 Nos stories", id: "📣 Bagikan ke story",
+    de: "📣 Als Story teilen", tr: "📣 Hikâyede paylaş", uk: "📣 В історію", fa: "📣 اشتراک در استوری", ar: "📣 مشاركة في قصة", hi: "📣 स्टोरी में साझा करें",
+  },
+  app_storyText: {
+    en: "A free daily conversation starter for your group, right inside Telegram.",
+    ru: "Бесплатная тема для разговора каждый день для вашей группы — прямо в Telegram.",
+    es: "Un tema de conversación diario y gratis para tu grupo, directamente en Telegram.",
+    pt: "Um tema de conversa diário e grátis para o seu grupo, direto no Telegram.",
+    id: "Pembuka obrolan harian gratis untuk grupmu, langsung di Telegram.",
+    de: "Ein kostenloser täglicher Gesprächsanreiz für deine Gruppe, direkt in Telegram.",
+    tr: "Grubun için ücretsiz, günlük bir sohbet başlatıcı — doğrudan Telegram içinde.",
+    uk: "Безкоштовна щоденна тема для розмови у вашій групі — прямо в Telegram.",
+    fa: "یک شروع‌کننده گفتگوی رایگان روزانه برای گروه شما، مستقیماً در تلگرام.",
+    ar: "بادئ محادثة يومي مجاني لمجموعتك، مباشرة داخل تيليجرام.",
+    hi: "आपके ग्रुप के लिए एक मुफ़्त रोज़ाना बातचीत शुरू करने वाला विषय, सीधे Telegram में।",
+  },
+  app_shareFail: {
+    en: "Sharing is unavailable right now.", ru: "Поделиться сейчас не получилось.", es: "Ahora mismo no se puede compartir.", pt: "Não foi possível compartilhar agora.", id: "Berbagi sedang tidak tersedia.",
+    de: "Teilen ist gerade nicht möglich.", tr: "Şu anda paylaşılamıyor.", uk: "Поділитися зараз не вдалося.", fa: "در حال حاضر اشتراک‌گذاری ممکن نیست.", ar: "المشاركة غير متاحة الآن.", hi: "अभी साझा नहीं किया जा सकता।",
+  },
+  app_errNoInit: {
+    en: "Open this app from the bot — tap the menu button.",
+    ru: "Откройте это приложение из бота — кнопка меню.",
+    es: "Abre esta app desde el bot — toca el botón de menú.",
+    pt: "Abra este app pelo bot — toque no botão de menu.",
+    id: "Buka aplikasi ini dari bot — ketuk tombol menu.",
+    de: "Öffne diese App über den Bot — tippe auf den Menü-Button.",
+    tr: "Bu uygulamayı bottan aç — menü düğmesine dokun.",
+    uk: "Відкрийте застосунок із бота — кнопка меню.",
+    fa: "این برنامه را از داخل ربات باز کنید — دکمه منو.",
+    ar: "افتح هذا التطبيق من البوت — زر القائمة.",
+    hi: "यह ऐप बॉट से खोलें — मेनू बटन दबाएँ।",
+  },
+  app_errExpired: {
+    en: "This session expired. Close and reopen the app.",
+    ru: "Сессия истекла. Закройте и откройте приложение снова.",
+    es: "La sesión caducó. Cierra y vuelve a abrir la app.",
+    pt: "A sessão expirou. Feche e abra o app de novo.",
+    id: "Sesi berakhir. Tutup lalu buka lagi aplikasinya.",
+    de: "Sitzung abgelaufen. App schließen und neu öffnen.",
+    tr: "Oturum doldu. Uygulamayı kapatıp yeniden aç.",
+    uk: "Сесія завершилася. Закрийте й відкрийте застосунок.",
+    fa: "نشست منقضی شد. برنامه را ببندید و دوباره باز کنید.",
+    ar: "انتهت الجلسة. أغلق التطبيق ثم افتحه من جديد.",
+    hi: "सेशन खत्म हो गया। ऐप बंद करके फिर खोलें।",
+  },
+  app_errBadSig: {
+    en: "This link is not valid. Reopen the app from the bot.",
+    ru: "Ссылка недействительна. Откройте приложение из бота.",
+    es: "Este enlace no es válido. Abre la app desde el bot.",
+    pt: "Este link não é válido. Abra o app pelo bot.",
+    id: "Tautan ini tidak valid. Buka aplikasi dari bot.",
+    de: "Dieser Link ist ungültig. Öffne die App über den Bot.",
+    tr: "Bu bağlantı geçersiz. Uygulamayı bottan aç.",
+    uk: "Посилання недійсне. Відкрийте застосунок із бота.",
+    fa: "این پیوند معتبر نیست. برنامه را از ربات باز کنید.",
+    ar: "هذا الرابط غير صالح. افتح التطبيق من البوت.",
+    hi: "यह लिंक मान्य नहीं है। ऐप बॉट से खोलें।",
+  },
+  app_unlockPro: {
+    en: "🔓 Unlock Pro", ru: "🔓 Открыть Pro", es: "🔓 Desbloquear Pro", pt: "🔓 Desbloquear Pro", id: "🔓 Buka Pro",
+    de: "🔓 Pro freischalten", tr: "🔓 Pro'yu aç", uk: "🔓 Відкрити Pro", fa: "🔓 فعال‌سازی Pro", ar: "🔓 تفعيل Pro", hi: "🔓 Pro अनलॉक करें",
+  },
+  app_proOneTime: {
+    en: "One-time {n} ⭐", ru: "Разово {n} ⭐", es: "Pago único {n} ⭐", pt: "Único {n} ⭐", id: "Sekali bayar {n} ⭐",
+    de: "Einmalig {n} ⭐", tr: "Tek seferlik {n} ⭐", uk: "Разово {n} ⭐", fa: "یک‌باره {n} ⭐", ar: "مرة واحدة {n} ⭐", hi: "एकमुश्त {n} ⭐",
+  },
+  app_proMonthly: {
+    en: "Monthly {n} ⭐/mo", ru: "Ежемесячно {n} ⭐", es: "Mensual {n} ⭐/mes", pt: "Mensal {n} ⭐/mês", id: "Bulanan {n} ⭐/bln",
+    de: "Monatlich {n} ⭐", tr: "Aylık {n} ⭐/ay", uk: "Щомісяця {n} ⭐", fa: "ماهانه {n} ⭐", ar: "شهريًا {n} ⭐", hi: "मासिक {n} ⭐",
+  },
+  app_payDone: {
+    en: "✅ Pro unlocked. Thank you.", ru: "✅ Pro активирован. Спасибо.", es: "✅ Pro activado. Gracias.", pt: "✅ Pro ativado. Obrigado.", id: "✅ Pro aktif. Terima kasih.",
+    de: "✅ Pro aktiviert. Danke.", tr: "✅ Pro açıldı. Teşekkürler.", uk: "✅ Pro активовано. Дякуємо.", fa: "✅ Pro فعال شد. سپاسگزاریم.", ar: "✅ تم تفعيل Pro. شكرًا لك.", hi: "✅ Pro चालू हो गया। धन्यवाद।",
+  },
+  app_payCancelled: {
+    en: "Payment cancelled.", ru: "Оплата отменена.", es: "Pago cancelado.", pt: "Pagamento cancelado.", id: "Pembayaran dibatalkan.",
+    de: "Zahlung abgebrochen.", tr: "Ödeme iptal edildi.", uk: "Оплату скасовано.", fa: "پرداخت لغو شد.", ar: "أُلغيت عملية الدفع.", hi: "भुगतान रद्द हुआ।",
+  },
+  app_payFailed: {
+    en: "Payment failed. Please try again.", ru: "Оплата не прошла. Попробуйте ещё раз.", es: "El pago falló. Inténtalo de nuevo.", pt: "O pagamento falhou. Tente de novo.", id: "Pembayaran gagal. Coba lagi.",
+    de: "Zahlung fehlgeschlagen. Bitte erneut versuchen.", tr: "Ödeme başarısız. Tekrar dene.", uk: "Оплата не пройшла. Спробуйте ще раз.", fa: "پرداخت ناموفق بود. دوباره تلاش کنید.", ar: "فشل الدفع. حاول مرة أخرى.", hi: "भुगतान विफल। फिर कोशिश करें।",
+  },
 };
+
+/** The 11 language codes this bot ships, in table order. */
+export const APP_LANGS: Lang[] = [...LANGS];
+
+/** Every `app_*` key, for every language, as a plain object — the Mini App's embedded
+ * `APP_I18N` dictionary. English fills any gap so a client lookup can never miss.
+ * Both loops are bounded by the static table (11 languages x the app_* key set). */
+export function appDict(): Record<string, Record<string, string>> {
+  const keys = (Object.keys(TABLE) as Key[]).filter((k) => k.startsWith("app_"));
+  const out: Record<string, Record<string, string>> = {};
+  for (const l of LANGS) {
+    const m: Record<string, string> = {};
+    for (const k of keys) m[k] = TABLE[k][l] ?? TABLE[k].en;
+    out[l] = m;
+  }
+  return out;
+}

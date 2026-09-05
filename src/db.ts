@@ -121,7 +121,7 @@ export class Store extends BaseStore {
 
   async recordSource(userId: number, src: string): Promise<void> { this.run("INSERT OR IGNORE INTO sources (user_id, src, ts) VALUES (?1, ?2, ?3)", userId, src, now()); }
   private sourceStats(): Record<string, number> {
-    const rows = this.all<{ src: string; n: number }>("SELECT src, COUNT(*) AS n FROM sources WHERE NOT (user_id BETWEEN 900000000 AND 900999999) GROUP BY src");
+    const rows = this.all<{ src: string; n: number }>(`SELECT src, COUNT(*) AS n FROM sources WHERE ${this.notTestUser("user_id")} GROUP BY src`);
     const out: Record<string, number> = {};
     for (const r of rows) out["src_" + r.src] = r.n;
     return out;
@@ -135,7 +135,7 @@ export class Store extends BaseStore {
     const e = this.one<{ n: number }>("SELECT COUNT(*) AS n FROM posts p JOIN groups gr ON gr.chat_id = p.chat_id WHERE gr.chat_id != ?1", QA_CHAT);
     const r = this.one<{ n: number }>(
       `SELECT COUNT(*) AS n FROM responders rr JOIN groups gr ON gr.chat_id = rr.chat_id
-       WHERE gr.chat_id != ?1 AND NOT (rr.user_id BETWEEN 900000000 AND 900999999)`, QA_CHAT);
+       WHERE gr.chat_id != ?1 AND ${this.notTestUser("rr.user_id")}`, QA_CHAT);
     return { ...u, pro: u.pro + (g?.p ?? 0), events: e?.n ?? 0, groups: g?.n ?? 0, replies: r?.n ?? 0, ...this.sourceStats() };
   }
 }

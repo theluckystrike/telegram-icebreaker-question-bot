@@ -9,11 +9,13 @@ import {
   isAdminStatus, isDigestDue, isDueNow, isRealSender, isSourcePayload, isTheme, isThemeAllowed, packKey,
   parseIcebreakerArgs, parseTz, renderPost, rollIndex, shouldEditCounter,
 } from "./logic.ts";
-import { APP_HTML, buildShareText, validateInitData } from "./webapp.ts";
+import { APP_HTML, buildShareText, handleProLink, initDataFailure, validateInitData } from "./webapp.ts";
+import type { ProLinkBody } from "./webapp.ts";
+import type { ProPlan } from "./webapp-i18n.ts";
+import { BOT } from "./botname.ts";
 import { resolveLang, t } from "./i18n.ts";
 export { Store };
 
-const BOT = "IcebreakerDailyBot";
 interface Env extends KitEnv { STORE: DurableObjectNamespace<Store>; }
 const store = (env: Env) => env.STORE.get(env.STORE.idFromName("main"));
 
@@ -23,13 +25,22 @@ const PRO: ProSpec = {
   payload: "ice-pro",
   thanks: "✅ Pro unlocked for the group. Custom hour, themes, and the end-of-day digest are on.\n\n/more — more free tools",
 };
-const MORE_TEXT = "More free tools by the same maker:\n🔒 @WhisperLockBot — locked messages only one person can open\n⏰ @NudgeRemindBot — reminders that arrive on time\n📮 @AnonInboxProBot — anonymous inbox via your link\n🧾 @SplitTabsBot — split group expenses\n📊 @GroupPulseBot — group activity leaderboard";
+const MORE_TEXT = "More free tools by the same maker:\n🔒 @WhisperLockBot — locked messages only one person can open\n⏰ @NudgeRemindBot — reminders that arrive on time\n📮 @AnonInboxProBot — anonymous inbox via your link\n🧾 @SplitTabsBot — split group expenses";
 const SHARE_PITCH = "A free daily conversation starter for your group — no setup needed.";
 const shareUrl = (): string => `https://t.me/share/url?url=${encodeURIComponent(`https://t.me/${BOT}?start=share`)}&text=${encodeURIComponent(SHARE_PITCH)}`;
 const helpText = (lang: string): string => t(lang, "help", { stars: PRO_STARS });
 const startText = (lang: string): string => t(lang, "start", { stars: PRO_STARS });
 const proKb = (lang: string, chatId: number): InlineKeyboard =>
   new InlineKeyboard().url(t(lang, "btn_unlockPro", { stars: PRO_STARS }), `https://t.me/${BOT}?start=pro_${encodeChatId(chatId)}`);
+
+/** One Stars invoice link, with exactly the title/description/payload the chat flow (PRO,
+ * above) uses. Shared by the /pro deep-link flow and the Mini App's POST /api/pro-link, so
+ * successful_payment's "ice-pro" payload match never drifts from what this mints. Icebreaker
+ * has no monthly plan, so `plan` is always "onetime" here (normalizePlan enforces that with
+ * allowMonthly:false before this is ever called). */
+function proLink(api: Bot["api"], _plan: ProPlan): Promise<string> {
+  return api.createInvoiceLink(PRO.title, PRO.description, PRO.payload, "", "XTR", [{ label: PRO.title, amount: PRO_STARS }]);
+}
 
 async function isAdmin(ctx: Context, env: Env, chatId: number, userId: number): Promise<boolean> {
   const cached = await store(env).isAdminCached(chatId, userId, now());
@@ -274,7 +285,7 @@ async function postDueDigests(env: Env, nowTs: number): Promise<void> {
 async function apiRecent(req: Request, env: Env): Promise<Response> {
   const body = (await req.json().catch(() => ({}))) as { initData?: string };
   const user = await validateInitData(body.initData ?? "", [env.BOT_TOKEN, env.HUB_BOT_TOKEN].filter((x): x is string => !!x));
-  if (!user) return Response.json({ error: "Open this page from Telegram." }, { status: 401 });
+  if (!user) return Response.json(initDataFailure(body.initData ?? "", `https://t.me/${BOT}`), { status: 401 });
   const groups = [];
   for (const g of await store(env).groupsOf(user.id)) {
     const day = dayIndex(now(), g.tz_min);
@@ -283,7 +294,11 @@ async function apiRecent(req: Request, env: Env): Promise<Response> {
     const history = posts.filter((p) => p.day !== day).map((p) => ({ day: String(p.day), text: p.text }));
     groups.push({ title: g.title, today: today?.text ?? null, history });
   }
-  return Response.json({ groups });
+  // Pro is purchased per-group (via /pro inside that group), not per-user, so there is no
+  // single "pro" flag for a person who may belong to a mix of free and Pro groups — the
+  // Mini App's Pro block always offers /api/pro-link, which mints the same plain "ice-pro"
+  // invoice /pro's deep-link falls back to when it isn't scoped to one chat.
+  return Response.json({ groups, proStars: PRO_STARS });
 }
 
 /** POST /api/share: registers a Bot API "prepared" inline message (savePreparedInlineMessage)
@@ -291,7 +306,7 @@ async function apiRecent(req: Request, env: Env): Promise<Response> {
 async function apiShare(req: Request, env: Env): Promise<Response> {
   const body = (await req.json().catch(() => ({}))) as { initData?: string };
   const user = await validateInitData(body.initData ?? "", [env.BOT_TOKEN, env.HUB_BOT_TOKEN].filter((x): x is string => !!x));
-  if (!user) return Response.json({ error: "Open this page from Telegram." }, { status: 401 });
+  if (!user) return Response.json(initDataFailure(body.initData ?? "", `https://t.me/${BOT}`), { status: 401 });
   try {
     const share = await preparedShare(env, user.id, buildShareText(SHARE_PITCH, BOT, "shared"), `https://t.me/${BOT}`);
     await store(env).recordShare(user.id, "chat");
@@ -304,9 +319,23 @@ async function apiShare(req: Request, env: Env): Promise<Response> {
 async function apiShareStory(req: Request, env: Env): Promise<Response> {
   const body = (await req.json().catch(() => ({}))) as { initData?: string };
   const user = await validateInitData(body.initData ?? "", [env.BOT_TOKEN, env.HUB_BOT_TOKEN].filter((t): t is string => !!t));
-  if (!user) return Response.json({ error: "Open this page from Telegram." }, { status: 401 });
+  if (!user) return Response.json(initDataFailure(body.initData ?? "", `https://t.me/${BOT}`), { status: 401 });
   await store(env).recordShare(user.id, "story");
   return Response.json({ ok: true });
+}
+
+/** POST /api/pro-link: the Mini App's own Stars checkout (tg.openInvoice). Same invoice as
+ * the chat flow (PRO), so successful_payment is unchanged. Icebreaker has no monthly plan,
+ * so allowMonthly is false: normalizePlan degrades any "monthly" request to one-time. */
+async function apiProLink(req: Request, env: Env): Promise<Response> {
+  const body = (await req.json().catch(() => ({}))) as ProLinkBody;
+  return handleProLink(body, {
+    tokens: [env.BOT_TOKEN, env.HUB_BOT_TOKEN].filter((x): x is string => !!x),
+    botLink: `https://t.me/${BOT}`,
+    allowMonthly: false,
+    mint: (plan) => proLink(new Bot(env.BOT_TOKEN).api, plan),
+    track: (userId) => store(env).track(userId, "invoice"),
+  });
 }
 
 const botFetch = makeFetch<Env>(buildBot, (env) => store(env).stats());
@@ -317,6 +346,7 @@ export default {
     if (path === "/app") return new Response(APP_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
     if (path === "/api/share" && req.method === "POST") return apiShare(req, env);
     if (path === "/api/share-story" && req.method === "POST") return apiShareStory(req, env);
+    if (path === "/api/pro-link" && req.method === "POST") return apiProLink(req, env);
     if (path === "/api/recent" && req.method === "POST") return apiRecent(req, env);
     return botFetch(req, env);
   },
